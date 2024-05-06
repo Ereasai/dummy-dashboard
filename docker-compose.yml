@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: myssix_db
+      POSTGRES_USER: myssix
+      POSTGRES_PASSWORD: test12
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql # mounts initialization script into the container; PostgreSQL will automatically execute this when the container starts for the first time.
+    
+    # not mapping the port will hide this db from the local machine; but it's still acessible within
+    # the Docker Compose. on the production build, this should be hidden.
+    ports:
+      - "5400:5432"
+
+  crawler:
+    build: ./python_script
+    environment:
+      # argument to the crawler
+      HOST: iotdev.snu.ac.kr
+      PORT: 58132
+      # argument to connect to db
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: myssix
+      DB_PASS: test12
+      DB_NAME: myssix_db
+    restart: unless-stopped
+    depends_on:
+      - db
+
+  backend:
+    build: ./backend
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: myssix
+      DB_PASS: test12
+      DB_NAME: myssix_db
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"  # Map port 80 on the host to port 80 in the container
+    depends_on:
+      - backend  # Ensures that the frontend starts after the backend
+
+
+volumes:
+  postgres-data:
