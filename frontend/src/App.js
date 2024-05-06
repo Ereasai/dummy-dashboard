@@ -9,6 +9,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log(`making request to ${API_URL}/values`)
         const response = await axios.get(`${API_URL}/values`);
         setData(response.data);
       } catch (error) {
